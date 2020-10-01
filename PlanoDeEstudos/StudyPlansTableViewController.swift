@@ -13,10 +13,18 @@ class StudyPlansTableViewController: UITableViewController {
     // MARK: - Super Methods
     override func viewDidLoad() {
         super.viewDidLoad()
+        NotificationCenter.default.addObserver(self, selector: #selector(onConfirmed), name: NSNotification.Name(rawValue: "Confirmed"), object: nil)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        tableView.reloadData()
+    }
+    
+    @objc private func onConfirmed(notification: Notification) {
+        guard let id = notification.userInfo?["id"] as? String else {return}
+        
+        sm.setPlanDone(id: id)
         tableView.reloadData()
     }
     
@@ -30,7 +38,7 @@ class StudyPlansTableViewController: UITableViewController {
         let studyPlan = sm.studyPlans[indexPath.row]
         cell.textLabel?.text = studyPlan.section
         cell.detailTextLabel?.text = dateFormatter.string(from: studyPlan.date)
-        cell.backgroundColor = studyPlan.done ? .green : .white
+        cell.backgroundColor = studyPlan.done ? .systemGreen : .white
         return cell
     }
 
