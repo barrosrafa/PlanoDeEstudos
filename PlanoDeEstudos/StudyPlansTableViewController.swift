@@ -5,7 +5,9 @@ class StudyPlansTableViewController: UITableViewController {
     // MARK: - Properties
     let dateFormatter: DateFormatter = {
         let df = DateFormatter()
-        df.dateStyle = .short
+        df.locale = Locale(identifier: "pt_BR")
+        df.dateStyle = .long
+        //df.dateFormat = "dd/MMMM/yyyy HH:mm"
         return df
     }()
     let sm = StudyManager.shared
@@ -21,11 +23,12 @@ class StudyPlansTableViewController: UITableViewController {
         tableView.reloadData()
     }
     
+    // MARK: - Methods
     @objc private func onConfirmed(notification: Notification) {
         guard let id = notification.userInfo?["id"] as? String else {return}
-        
         sm.setPlanDone(id: id)
         tableView.reloadData()
+        
     }
     
     // MARK: - Table view data source

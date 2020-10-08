@@ -1,6 +1,7 @@
 import UIKit
 import UserNotifications
 
+
 struct ActionIdentifier {
     static let confirm = "Confirm"
     static let cancel = "Cancel"
@@ -17,16 +18,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         center.delegate = self
         center.getNotificationSettings { (settings) in
             switch settings.authorizationStatus {
-            case .notDetermined: self.center.requestAuthorization(options: [.alert, .sound, .badge, .carPlay]) { (authorized, error) in
-                if error == nil {
+            case .notDetermined:
+                self.center.requestAuthorization(options: [.alert, .sound, .badge, .carPlay]) { (authorized, error) in
+                    if error == nil {
                         print(authorized)
                     }
                 }
-            default: break
+            default:
+                break
             }
         }
         
-        let confirmAction = UNNotificationAction(identifier: ActionIdentifier.confirm, title: "Já estudei", options: [.foreground])
+        application.registerForRemoteNotifications()
+        
+        let confirmAction = UNNotificationAction(identifier: ActionIdentifier.confirm, title: "Já estudei 👍", options: [.foreground])
         let cancelAction = UNNotificationAction(identifier: ActionIdentifier.cancel, title: "Cancelar", options: [])
         let category = UNNotificationCategory(identifier: "Lembrete", actions: [confirmAction, cancelAction], intentIdentifiers: [], hiddenPreviewsBodyPlaceholder: "", options: [.customDismissAction])
         center.setNotificationCategories([category])
@@ -35,10 +40,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         return true
     }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let token = deviceToken.reduce(""){$0 + String(format: "%02x", $1) }
+        print(token)
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print(error)
+    }
+    
 }
 
+
+// MARK: - UNUserNotificationCenterDelegate
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        
         completionHandler([.alert, .sound])
     }
     
@@ -46,20 +64,32 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         
         let id = response.notification.request.identifier
         let title = response.notification.request.content.title
-        
-        print(id)
-        print(title)
+        print("ID:", id, "Title:", title)
         
         switch response.actionIdentifier {
         case ActionIdentifier.confirm:
+            print("usuário tocou no botão Confirm")
+            
             StudyManager.shared.setPlanDone(id: id)
             NotificationCenter.default.post(name: NSNotification.Name("Confirmed"), object: nil, userInfo: ["id": id])
-        case ActionIdentifier.cancel: break
-        case UNNotificationDefaultActionIdentifier: break
-        case UNNotificationDismissActionIdentifier: break
-        default: break
+            
+        case ActionIdentifier.cancel:
+            print("usuário tocou no botão Cancel")
+            
+        case UNNotificationDefaultActionIdentifier:
+            print("usuário tocou na notificação em si")
+            
+            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+            let vc = storyboard.instantiateViewController(withIdentifier: "Orange")
+            window?.rootViewController?.present(vc, animated: true, completion: nil)
+            
+        case UNNotificationDismissActionIdentifier:
+            print("usuário dismissou a notificação")
+        default:
+            break
         }
         
         completionHandler()
     }
+    
 }
